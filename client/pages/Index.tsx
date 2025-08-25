@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Users, Gift, ArrowRight, CheckCircle, MapPin, Clock, AlertTriangle, User, Home, Phone, Info, Menu } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Heart, Users, Gift, ArrowRight, CheckCircle, MapPin, Clock, AlertTriangle, User, Search, Phone } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Request, ItemCategory } from "@shared/api";
+import Navigation from "@/components/Navigation";
 
 interface DonationActivity {
   id: string;
@@ -70,6 +72,8 @@ const donationCategories = [
 export default function Index() {
   const [activities, setActivities] = useState<DonationActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchActivities();
@@ -100,59 +104,16 @@ export default function Index() {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?itemName=${encodeURIComponent(searchQuery)}&type=both`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header / Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo + Website Name */}
-            <div className="flex items-center space-x-3">
-  <img
-    src="https://sevasahayog.org/wp-content/uploads/2021/07/header-logo.svg"
-    alt="Seva sahayog foundation logo"
-    className="h-10 w-auto"
-  />
-  <div>
-    <span className="text-xl font-bold text-gray-900">Seva sahayog foundation</span>
-    <span className="hidden sm:inline text-sm text-gray-600 ml-2">Give & Receive with Care</span>
-  </div>
-</div>
-
-            {/* Navigation Links - Desktop */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
-                <Home className="h-4 w-4" />
-                <span>Home</span>
-              </Link>
-              <Link to="#about" className="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
-                <Info className="h-4 w-4" />
-                <span>About Us</span>
-              </Link>
-              <Link to="/register" className="text-gray-700 hover:text-blue-600">Donate</Link>
-              <Link to="/register" className="text-gray-700 hover:text-blue-600">Receive</Link>
-              <Link to="#contact" className="text-gray-700 hover:text-blue-600 flex items-center space-x-1">
-                <Phone className="h-4 w-4" />
-                <span>Contact</span>
-              </Link>
-            </div>
-
-            {/* Login / Register */}
-            <div className="flex items-center space-x-3">
-              <Link to="/login">
-                <Button variant="ghost" className="text-gray-700">Login</Button>
-              </Link>
-              <Link to="/register">
-                <Button className="bg-blue-600 hover:bg-blue-700">Register</Button>
-              </Link>
-              {/* Mobile Menu */}
-              <Button variant="ghost" size="sm" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-white">
@@ -173,9 +134,30 @@ export default function Index() {
               <span className="text-yellow-300">change a life.</span>
             </h1>
             <p className="text-xl text-blue-100 mb-10 max-w-3xl mx-auto">
-              Seva sahayog foundation connects generous hearts with those in need. Every act of kindness 
+              Revive connects generous hearts with those in need. Every act of kindness 
               creates ripples of hope in our community.
             </p>
+
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search for donations or requests (e.g., rice, clothes, books)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 pr-32 h-14 text-lg bg-white/90 border-white/20 backdrop-blur-sm"
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="absolute right-2 top-2 h-10 bg-yellow-500 text-gray-900 hover:bg-yellow-400"
+                >
+                  Search
+                </Button>
+              </div>
+            </form>
 
             {/* Call-to-Action buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -333,10 +315,10 @@ export default function Index() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              About Seva sahayog foundation
+              About Revive
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We believe in the power of community. Seva sahayog foundation connects those who want to give 
+              We believe in the power of community. Revive connects those who want to give 
               with those who need support, creating meaningful relationships and lasting impact.
             </p>
           </div>
@@ -415,7 +397,7 @@ export default function Index() {
                   <Heart className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-xl font-bold">Seva sahayog foundation</span>
+                  <span className="text-xl font-bold">Revive</span>
                   <div className="text-sm text-gray-400">Give & Receive with Care</div>
                 </div>
               </div>
@@ -448,7 +430,7 @@ export default function Index() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Seva sahayog foundation - Give & Receive with Care. All rights reserved.</p>
+            <p>&copy; 2024 Revive - Give & Receive with Care. All rights reserved.</p>
           </div>
         </div>
       </footer>

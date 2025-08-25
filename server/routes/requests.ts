@@ -1,20 +1,28 @@
 import { RequestHandler } from "express";
 import { CreateRequestRequest, CreateRequestResponse, Request, AdminRequestsResponse, ApprovalResponse, ItemCategory } from "@shared/api";
 import { findUserById } from "./auth";
-import crypto from "crypto";
+import { 
+  saveRequestToCSV, 
+  readRequestsFromCSV, 
+  updateRequestInCSV, 
+  deleteRequestFromCSV,
+  generateId,
+  RequestCSV 
+} from "../utils/csvUtils";
 
-// Simple in-memory storage for demo purposes
-interface StoredRequest extends Request {
-  receiverName?: string;
-  receiverEmail?: string;
-}
-
-const requests: StoredRequest[] = [];
-
-// Helper function to find request by id
-const findRequestById = (id: string): StoredRequest | undefined => {
-  return requests.find(request => request.id === id);
-};
+// Helper function to convert RequestCSV to Request
+const csvToApiRequest = (csvRequest: RequestCSV): Request => ({
+  id: csvRequest.id,
+  receiverId: csvRequest.receiverId,
+  itemNeeded: csvRequest.itemNeeded,
+  category: csvRequest.category as ItemCategory,
+  description: csvRequest.description,
+  quantity: csvRequest.quantity,
+  urgency: csvRequest.urgency as 'normal' | 'urgent',
+  status: csvRequest.status as 'pending' | 'approved' | 'matched' | 'rejected',
+  createdAt: csvRequest.createdAt,
+  updatedAt: csvRequest.updatedAt
+});
 
 // Add new request (POST /api/requests/add) - Receiver only
 export const addRequest: RequestHandler = (req: any, res) => {
@@ -66,12 +74,14 @@ export const addRequest: RequestHandler = (req: any, res) => {
     }
 
     // Create new request
-    const requestId = crypto.randomUUID();
+    const requestId = generateId();
     const now = new Date().toISOString();
 
-    const newRequest: StoredRequest = {
+    const csvRequest: RequestCSV = {
       id: requestId,
       receiverId: userId,
+      receiverName: receiver.name,
+      receiverEmail: receiver.email,
       itemNeeded,
       category,
       description,
@@ -79,17 +89,18 @@ export const addRequest: RequestHandler = (req: any, res) => {
       urgency,
       status: 'pending',
       createdAt: now,
-      updatedAt: now,
-      receiverName: receiver.name,
-      receiverEmail: receiver.email
+      updatedAt: now
     };
 
-    requests.push(newRequest);
+    // Save to CSV
+    saveRequestToCSV(csvRequest);
+
+    const apiRequest = csvToApiRequest(csvRequest);
 
     const response: CreateRequestResponse = {
       success: true,
       message: "Request posted successfully! It's pending admin approval.",
-      request: newRequest
+      request: apiRequest
     };
 
     res.status(201).json(response);
@@ -112,7 +123,10 @@ export const getMyRequests: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const userRequests = requests.filter(request => request.receiverId === userId);
+    const allRequests = readRequestsFromCSV();
+    const userRequests = allRequests
+      .filter(request => request.receiverId === userId)
+      .map(csvToApiRequest);
 
     res.json({
       success: true,
@@ -135,7 +149,9 @@ export const updateRequest: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const request = findRequestById(id);
+    const allRequests = readRequestsFromCSV();
+    const request = allRequests.find(r => r.id === id);
+    
     if (!request) {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
@@ -168,18 +184,29 @@ export const updateRequest: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Update request
-    request.itemNeeded = itemNeeded;
-    request.category = category;
-    request.description = description;
-    request.quantity = quantity || 1;
-    request.urgency = urgency;
-    request.updatedAt = new Date().toISOString();
+    // Update request in CSV
+    const updates: Partial<RequestCSV> = {
+      itemNeeded,
+      category,
+      description,
+      quantity: quantity || 1,
+      urgency,
+      updatedAt: new Date().toISOString()
+    };
+
+    const success = updateRequestInCSV(id, updates);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to update request." });
+    }
+
+    // Read updated request
+    const updatedRequests = readRequestsFromCSV();
+    const updatedRequest = updatedRequests.find(r => r.id === id);
 
     res.json({
       success: true,
       message: "Request updated successfully.",
-      request
+      request: updatedRequest ? csvToApiRequest(updatedRequest) : null
     });
   } catch (error) {
     console.error("Update request error:", error);
@@ -197,12 +224,12 @@ export const deleteRequest: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const requestIndex = requests.findIndex(request => request.id === id);
-    if (requestIndex === -1) {
+    const allRequests = readRequestsFromCSV();
+    const request = allRequests.find(r => r.id === id);
+    
+    if (!request) {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
-
-    const request = requests[requestIndex];
 
     // Check if user owns this request
     if (request.receiverId !== userId) {
@@ -217,8 +244,11 @@ export const deleteRequest: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Remove request
-    requests.splice(requestIndex, 1);
+    // Delete from CSV
+    const success = deleteRequestFromCSV(id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to delete request." });
+    }
 
     res.json({
       success: true,
@@ -233,15 +263,13 @@ export const deleteRequest: RequestHandler = (req: any, res) => {
 // Get all requests (GET /api/admin/requests) - Admin only
 export const getAllRequests: RequestHandler = (req: any, res) => {
   try {
-    // Add receiver info to each request
-    const requestsWithReceiverInfo = requests.map(request => {
-      const receiver = findUserById(request.receiverId);
-      return {
-        ...request,
-        receiverName: receiver?.name || 'Unknown',
-        receiverEmail: receiver?.email || 'Unknown'
-      };
-    });
+    const allRequests = readRequestsFromCSV();
+    
+    const requestsWithReceiverInfo = allRequests.map(request => ({
+      ...csvToApiRequest(request),
+      receiverName: request.receiverName,
+      receiverEmail: request.receiverEmail
+    }));
 
     const response: AdminRequestsResponse = {
       success: true,
@@ -268,7 +296,9 @@ export const approveRequest: RequestHandler = (req: any, res) => {
       });
     }
 
-    const request = findRequestById(id);
+    const allRequests = readRequestsFromCSV();
+    const request = allRequests.find(r => r.id === id);
+    
     if (!request) {
       return res.status(404).json({ success: false, message: "Request not found." });
     }
@@ -280,9 +310,16 @@ export const approveRequest: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Update status
-    request.status = action === 'approve' ? 'approved' : 'rejected';
-    request.updatedAt = new Date().toISOString();
+    // Update status in CSV
+    const updates: Partial<RequestCSV> = {
+      status: action === 'approve' ? 'approved' : 'rejected',
+      updatedAt: new Date().toISOString()
+    };
+
+    const success = updateRequestInCSV(id, updates);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to update request status." });
+    }
 
     const response: ApprovalResponse = {
       success: true,
@@ -299,17 +336,16 @@ export const approveRequest: RequestHandler = (req: any, res) => {
 // Get public requests (GET /api/public/requests) - No authentication required
 export const getPublicRequests: RequestHandler = (req: any, res) => {
   try {
-    // Only return approved requests with receiver info
-    const publicRequests = requests
+    const allRequests = readRequestsFromCSV();
+    
+    // Only return approved requests
+    const publicRequests = allRequests
       .filter(request => request.status === 'approved')
-      .map(request => {
-        const receiver = findUserById(request.receiverId);
-        return {
-          ...request,
-          receiverName: receiver?.name || 'Anonymous',
-          receiverEmail: receiver?.email || 'Hidden'
-        };
-      })
+      .map(request => ({
+        ...csvToApiRequest(request),
+        receiverName: request.receiverName || 'Anonymous',
+        receiverEmail: request.receiverEmail || 'Hidden'
+      }))
       .sort((a, b) => {
         // Sort by urgency first (urgent first), then by creation date (newest first)
         if (a.urgency === 'urgent' && b.urgency !== 'urgent') return -1;
@@ -327,5 +363,13 @@ export const getPublicRequests: RequestHandler = (req: any, res) => {
   }
 };
 
-// Export requests array for use in matching
-export { requests };
+// Get approved requests for public use
+export const getApprovedRequests = (): RequestCSV[] => {
+  try {
+    const allRequests = readRequestsFromCSV();
+    return allRequests.filter(request => request.status === 'approved');
+  } catch (error) {
+    console.error("Error reading approved requests:", error);
+    return [];
+  }
+};

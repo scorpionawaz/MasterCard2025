@@ -1,0 +1,6 @@
+id,donorId,donorName,donorEmail,itemName,category,description,quantity,photoUrl,status,createdAt,updatedAt
+1735666100001abc,donor1,John Doe,john@example.com,Winter Clothes,clothes,"Warm winter jackets, sweaters, and pants for children ages 5-12",20,,approved,2024-01-01T10:00:00Z,2024-01-01T10:00:00Z
+1735666100002def,donor2,Jane Smith,jane@example.com,Rice and Lentils,food,50kg of rice and 20kg of lentils for families in need,70,,approved,2024-01-02T10:00:00Z,2024-01-02T10:00:00Z
+1735666100003ghi,donor3,Medical Center,medical@example.com,Medical Supplies,medical,"First aid kits, bandages, and basic medicines",15,,approved,2024-01-03T10:00:00Z,2024-01-03T10:00:00Z
+1735666100004jkl,donor4,Tech Company,tech@example.com,Laptops,electronics,Refurbished laptops for students and educational purposes,5,,approved,2024-01-04T10:00:00Z,2024-01-04T10:00:00Z
+1735666100005mno,donor5,Book Lover,books@example.com,Educational Books,books,Textbooks and reference books for high school students,50,,approved,2024-01-05T10:00:00Z,2024-01-05T10:00:00Z

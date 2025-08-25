@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Heart, Plus, Upload, Edit, Trash2, Package, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreateDonationRequest, CreateDonationResponse, Donation, ItemCategory } from "@shared/api";
+import Navigation from "@/components/Navigation";
 
 interface User {
   id: string;
@@ -213,28 +214,7 @@ export default function DonorDashboard() {
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <img
-                src="https://cdn.builder.io/api/v1/image/assets%2F6fd2ab6a19b640de95da58a05ad12a50%2Fab0fe33fd60348a89b1dfbcda37d96e2?format=webp&width=800"
-                alt="Seva Sahayog Foundation"
-                className="h-10 w-auto"
-              />
-              <span className="text-sm text-[#2C5F7F] font-medium ml-2">Donor Dashboard</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {user.name}
-              </span>
-              <Button variant="outline" onClick={handleLogout} className="border-[#2C5F7F] text-[#2C5F7F] hover:bg-[#2C5F7F] hover:text-white">
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Navigation />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4 pt-8">
