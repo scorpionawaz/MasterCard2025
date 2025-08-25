@@ -1,20 +1,28 @@
 import { RequestHandler } from "express";
 import { CreateDonationRequest, CreateDonationResponse, Donation, AdminDonationsResponse, ApprovalResponse, ItemCategory } from "@shared/api";
 import { findUserById } from "./auth";
-import crypto from "crypto";
+import { 
+  saveDonationToCSV, 
+  readDonationsFromCSV, 
+  updateDonationInCSV, 
+  deleteDonationFromCSV,
+  generateId,
+  DonationCSV 
+} from "../utils/csvUtils";
 
-// Simple in-memory storage for demo purposes
-interface StoredDonation extends Donation {
-  donorName?: string;
-  donorEmail?: string;
-}
-
-const donations: StoredDonation[] = [];
-
-// Helper function to find donation by id
-const findDonationById = (id: string): StoredDonation | undefined => {
-  return donations.find(donation => donation.id === id);
-};
+// Helper function to convert DonationCSV to Donation
+const csvToApiDonation = (csvDonation: DonationCSV): Donation => ({
+  id: csvDonation.id,
+  donorId: csvDonation.donorId,
+  itemName: csvDonation.itemName,
+  category: csvDonation.category as ItemCategory,
+  description: csvDonation.description,
+  quantity: csvDonation.quantity,
+  photoUrl: csvDonation.photoUrl || undefined,
+  status: csvDonation.status as 'pending' | 'approved' | 'matched' | 'rejected',
+  createdAt: csvDonation.createdAt,
+  updatedAt: csvDonation.updatedAt
+});
 
 // Add new donation (POST /api/donations/add) - Donor only
 export const addDonation: RequestHandler = (req: any, res) => {
@@ -58,30 +66,33 @@ export const addDonation: RequestHandler = (req: any, res) => {
     }
 
     // Create new donation
-    const donationId = crypto.randomUUID();
+    const donationId = generateId();
     const now = new Date().toISOString();
 
-    const newDonation: StoredDonation = {
+    const csvDonation: DonationCSV = {
       id: donationId,
       donorId: userId,
+      donorName: donor.name,
+      donorEmail: donor.email,
       itemName,
       category,
       description,
       quantity: quantity || 1,
-      photoUrl,
+      photoUrl: photoUrl || '',
       status: 'pending',
       createdAt: now,
-      updatedAt: now,
-      donorName: donor.name,
-      donorEmail: donor.email
+      updatedAt: now
     };
 
-    donations.push(newDonation);
+    // Save to CSV
+    saveDonationToCSV(csvDonation);
+
+    const apiDonation = csvToApiDonation(csvDonation);
 
     const response: CreateDonationResponse = {
       success: true,
       message: "Donation added successfully! It's pending admin approval.",
-      donation: newDonation
+      donation: apiDonation
     };
 
     res.status(201).json(response);
@@ -104,7 +115,10 @@ export const getMyDonations: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const userDonations = donations.filter(donation => donation.donorId === userId);
+    const allDonations = readDonationsFromCSV();
+    const userDonations = allDonations
+      .filter(donation => donation.donorId === userId)
+      .map(csvToApiDonation);
 
     res.json({
       success: true,
@@ -127,7 +141,9 @@ export const updateDonation: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const donation = findDonationById(id);
+    const allDonations = readDonationsFromCSV();
+    const donation = allDonations.find(d => d.id === id);
+    
     if (!donation) {
       return res.status(404).json({ success: false, message: "Donation not found." });
     }
@@ -153,18 +169,29 @@ export const updateDonation: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Update donation
-    donation.itemName = itemName;
-    donation.category = category;
-    donation.description = description;
-    donation.quantity = quantity || 1;
-    donation.photoUrl = photoUrl;
-    donation.updatedAt = new Date().toISOString();
+    // Update donation in CSV
+    const updates: Partial<DonationCSV> = {
+      itemName,
+      category,
+      description,
+      quantity: quantity || 1,
+      photoUrl: photoUrl || '',
+      updatedAt: new Date().toISOString()
+    };
+
+    const success = updateDonationInCSV(id, updates);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to update donation." });
+    }
+
+    // Read updated donation
+    const updatedDonations = readDonationsFromCSV();
+    const updatedDonation = updatedDonations.find(d => d.id === id);
 
     res.json({
       success: true,
       message: "Donation updated successfully.",
-      donation
+      donation: updatedDonation ? csvToApiDonation(updatedDonation) : null
     });
   } catch (error) {
     console.error("Update donation error:", error);
@@ -182,12 +209,12 @@ export const deleteDonation: RequestHandler = (req: any, res) => {
       return res.status(401).json({ success: false, message: "Authentication required." });
     }
 
-    const donationIndex = donations.findIndex(donation => donation.id === id);
-    if (donationIndex === -1) {
+    const allDonations = readDonationsFromCSV();
+    const donation = allDonations.find(d => d.id === id);
+    
+    if (!donation) {
       return res.status(404).json({ success: false, message: "Donation not found." });
     }
-
-    const donation = donations[donationIndex];
 
     // Check if user owns this donation
     if (donation.donorId !== userId) {
@@ -202,8 +229,11 @@ export const deleteDonation: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Remove donation
-    donations.splice(donationIndex, 1);
+    // Delete from CSV
+    const success = deleteDonationFromCSV(id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to delete donation." });
+    }
 
     res.json({
       success: true,
@@ -218,15 +248,13 @@ export const deleteDonation: RequestHandler = (req: any, res) => {
 // Get all donations (GET /api/admin/donations) - Admin only
 export const getAllDonations: RequestHandler = (req: any, res) => {
   try {
-    // Add donor info to each donation
-    const donationsWithDonorInfo = donations.map(donation => {
-      const donor = findUserById(donation.donorId);
-      return {
-        ...donation,
-        donorName: donor?.name || 'Unknown',
-        donorEmail: donor?.email || 'Unknown'
-      };
-    });
+    const allDonations = readDonationsFromCSV();
+    
+    const donationsWithDonorInfo = allDonations.map(donation => ({
+      ...csvToApiDonation(donation),
+      donorName: donation.donorName,
+      donorEmail: donation.donorEmail
+    }));
 
     const response: AdminDonationsResponse = {
       success: true,
@@ -253,7 +281,9 @@ export const approveDonation: RequestHandler = (req: any, res) => {
       });
     }
 
-    const donation = findDonationById(id);
+    const allDonations = readDonationsFromCSV();
+    const donation = allDonations.find(d => d.id === id);
+    
     if (!donation) {
       return res.status(404).json({ success: false, message: "Donation not found." });
     }
@@ -265,9 +295,16 @@ export const approveDonation: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Update status
-    donation.status = action === 'approve' ? 'approved' : 'rejected';
-    donation.updatedAt = new Date().toISOString();
+    // Update status in CSV
+    const updates: Partial<DonationCSV> = {
+      status: action === 'approve' ? 'approved' : 'rejected',
+      updatedAt: new Date().toISOString()
+    };
+
+    const success = updateDonationInCSV(id, updates);
+    if (!success) {
+      return res.status(404).json({ success: false, message: "Failed to update donation status." });
+    }
 
     const response: ApprovalResponse = {
       success: true,
@@ -281,5 +318,13 @@ export const approveDonation: RequestHandler = (req: any, res) => {
   }
 };
 
-// Export donations array for use in matching
-export { donations };
+// Get approved donations for public use
+export const getApprovedDonations = (): DonationCSV[] => {
+  try {
+    const allDonations = readDonationsFromCSV();
+    return allDonations.filter(donation => donation.status === 'approved');
+  } catch (error) {
+    console.error("Error reading approved donations:", error);
+    return [];
+  }
+};
