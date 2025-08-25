@@ -108,14 +108,16 @@ export default function Index() {
           <div className="flex justify-between items-center h-16">
             {/* Logo + Website Name */}
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-green-500 p-2 rounded-lg">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <span className="text-xl font-bold text-gray-900">Seva sahayog foundation</span>
-                <span className="hidden sm:inline text-sm text-gray-600 ml-2">Give & Receive with Care</span>
-              </div>
-            </div>
+  <img
+    src="https://sevasahayog.org/wp-content/uploads/2021/07/header-logo.svg"
+    alt="Seva sahayog foundation logo"
+    className="h-10 w-auto"
+  />
+  <div>
+    <span className="text-xl font-bold text-gray-900">Seva sahayog foundation</span>
+    <span className="hidden sm:inline text-sm text-gray-600 ml-2">Give & Receive with Care</span>
+  </div>
+</div>
 
             {/* Navigation Links - Desktop */}
             <div className="hidden md:flex items-center space-x-8">
