@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Seva Sahayog Foundation Theme - Blue, Orange, and Yellow palette
+   * Reflecting the logo's compassionate and trustworthy design
+   */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 205 50% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 205 50% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 205 50% 25%;
+
+    --primary: 205 50% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 95% 90%;
+    --secondary-foreground: 205 50% 30%;
+
+    --muted: 210 30% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 18 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 205 50% 35%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 210 15% 97%;
+    --sidebar-foreground: 205 50% 25%;
+    --sidebar-primary: 205 50% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 95% 90%;
+    --sidebar-accent-foreground: 205 50% 30%;
+    --sidebar-border: 214 32% 88%;
+    --sidebar-ring: 205 50% 35%;
+  }
+
+  .dark {
+    --background: 205 50% 7%;
+    --foreground: 210 40% 95%;
+
+    --card: 205 50% 9%;
+    --card-foreground: 210 40% 95%;
+
+    --popover: 205 50% 9%;
+    --popover-foreground: 210 40% 95%;
+
+    --primary: 205 50% 50%;
+    --primary-foreground: 205 50% 7%;
+
+    --secondary: 25 50% 15%;
+    --secondary-foreground: 25 50% 85%;
+
+    --muted: 205 50% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 18 80% 55%;
+    --accent-foreground: 205 50% 7%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 210 40% 95%;
+
+    --border: 205 50% 18%;
+    --input: 205 50% 18%;
+    --ring: 205 50% 50%;
+
+    --sidebar-background: 205 50% 9%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 205 50% 50%;
+    --sidebar-primary-foreground: 205 50% 7%;
+    --sidebar-accent: 25 50% 15%;
+    --sidebar-accent-foreground: 25 50% 85%;
+    --sidebar-border: 205 50% 18%;
+    --sidebar-ring: 205 50% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(205 50% 95%) 0%, hsl(25 95% 95%) 100%);
+  }
+
+  .gradient-hero-dark {
+    background: linear-gradient(135deg, hsl(205 50% 12%) 0%, hsl(25 50% 10%) 100%);
+  }
+
+  /* Seva Sahayog Foundation specific gradients */
+  .gradient-seva {
+    background: linear-gradient(135deg, #2C5F7F 0%, #4A7C9A 100%);
+  }
+
+  .gradient-seva-accent {
+    background: linear-gradient(135deg, #FF6B35 0%, #FFC845 100%);
+  }
+
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent));
+  }
+}
+
+/* Animation for loading states */
+@keyframes seva-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.seva-pulse {
+  animation: seva-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
