@@ -8,6 +8,7 @@ import { addRequest, getMyRequests, updateRequest, deleteRequest, getAllRequests
 import { createMatch, getAllMatches, completeMatch, cancelMatch } from "./routes/matching";
 import { getPublicActivitiesWithSample } from "./routes/activities";
 import { getPublicDonations, searchPublicData } from "./routes/public";
+import { seedTestData } from "./routes/seed";
 import { initializeCSVFiles } from "./utils/csvUtils";
 
 export function createServer() {
@@ -64,6 +65,9 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Development/Testing route - remove in production
+  app.post("/api/seed", seedTestData);
 
   return app;
 }
