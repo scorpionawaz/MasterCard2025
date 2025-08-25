@@ -57,12 +57,26 @@ export default function Search() {
   const searchType = searchParams.get('type') || 'both'; // 'donations', 'requests', or 'both'
 
   useEffect(() => {
-    fetchData();
+    // Initialize filters from URL params
+    const itemName = searchParams.get('itemName') || '';
+    const category = searchParams.get('category') || 'all';
+    const urgency = searchParams.get('urgency') || 'all';
+
+    if (itemName || category !== 'all' || urgency !== 'all') {
+      setFilters(prev => ({
+        ...prev,
+        itemName,
+        category: category as ItemCategory | 'all',
+        urgency: urgency as 'all' | 'normal' | 'urgent',
+      }));
+    } else {
+      fetchData();
+    }
   }, []);
 
   useEffect(() => {
     applyFilters();
-  }, [filters, donations, requests]);
+  }, [filters, searchType]);
 
   const fetchData = async () => {
     try {
