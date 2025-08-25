@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Search from "./pages/Search";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import QuickLogin from "./pages/QuickLogin";
 import DonorDashboard from "./pages/DonorDashboard";
 import ReceiverDashboard from "./pages/ReceiverDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/search" element={<Search />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/quick-login" element={<QuickLogin />} />
           <Route path="/donor/dashboard" element={<DonorDashboard />} />
           <Route path="/receiver/dashboard" element={<ReceiverDashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
