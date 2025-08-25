@@ -134,7 +134,7 @@ export default function Index() {
               <span className="text-yellow-300">change a life.</span>
             </h1>
             <p className="text-xl text-blue-100 mb-10 max-w-3xl mx-auto">
-              Revive connects generous hearts with those in need. Every act of kindness 
+              Seva sahayog foundation connects generous hearts with those in need. Every act of kindness 
               creates ripples of hope in our community.
             </p>
 
@@ -315,10 +315,10 @@ export default function Index() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              About Revive
+              About Seva sahayog foundation
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We believe in the power of community. Revive connects those who want to give 
+              We believe in the power of community. Seva sahayog foundation connects those who want to give 
               with those who need support, creating meaningful relationships and lasting impact.
             </p>
           </div>
@@ -397,7 +397,7 @@ export default function Index() {
                   <Heart className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-xl font-bold">Revive</span>
+                  <span className="text-xl font-bold">Seva sahayog foundation</span>
                   <div className="text-sm text-gray-400">Give & Receive with Care</div>
                 </div>
               </div>
@@ -430,7 +430,7 @@ export default function Index() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Revive - Give & Receive with Care. All rights reserved.</p>
+            <p>&copy; 2024 Seva sahayog foundation - Give & Receive with Care. All rights reserved.</p>
           </div>
         </div>
       </footer>
