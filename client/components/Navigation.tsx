@@ -140,6 +140,14 @@ export default function Navigation() {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/approval" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Approval Center
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
