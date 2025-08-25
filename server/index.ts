@@ -7,6 +7,7 @@ import { addDonation, getMyDonations, updateDonation, deleteDonation, getAllDona
 import { addRequest, getMyRequests, updateRequest, deleteRequest, getAllRequests, approveRequest, getPublicRequests } from "./routes/requests";
 import { createMatch, getAllMatches, completeMatch, cancelMatch } from "./routes/matching";
 import { getPublicActivitiesWithSample } from "./routes/activities";
+import { getPublicDonations, searchPublicData } from "./routes/public";
 import { initializeCSVFiles } from "./utils/csvUtils";
 
 export function createServer() {
@@ -22,6 +23,8 @@ export function createServer() {
 
   // Public routes (no authentication required)
   app.get("/api/public/requests", getPublicRequests);
+  app.get("/api/public/donations", getPublicDonations);
+  app.get("/api/public/search", searchPublicData);
   app.get("/api/public/activities", getPublicActivitiesWithSample);
 
   // Authentication routes

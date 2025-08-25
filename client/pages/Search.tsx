@@ -67,56 +67,54 @@ export default function Search() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      
-      // Fetch public requests
-      const requestsResponse = await fetch('/api/public/requests');
-      if (requestsResponse.ok) {
-        const requestsData = await requestsResponse.json();
-        setRequests(requestsData.requests || []);
-      }
 
-      // For donations, we'll need to add a public endpoint or use the admin endpoint with auth
-      // For now, let's create mock data
-      const mockDonations: DonationWithUser[] = [
-        {
-          id: '1',
-          donorId: 'donor1',
-          donorName: 'John Doe',
-          itemName: 'Winter Clothes',
-          category: 'clothes',
-          description: 'Warm winter jackets, sweaters, and pants for children',
-          quantity: 20,
-          status: 'approved',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          donorId: 'donor2',
-          donorName: 'Jane Smith',
-          itemName: 'Rice and Lentils',
-          category: 'food',
-          description: '50kg of rice and 20kg of lentils for families in need',
-          quantity: 70,
-          status: 'approved',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: '3',
-          donorId: 'donor3',
-          donorName: 'Medical Center',
-          itemName: 'Medical Supplies',
-          category: 'medical',
-          description: 'First aid kits, bandages, and basic medicines',
-          quantity: 15,
-          status: 'approved',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 172800000).toISOString(),
-        },
-      ];
-      
-      setDonations(mockDonations);
+      // Use the new search endpoint to get both donations and requests
+      const searchParams = new URLSearchParams({
+        type: 'both',
+        category: 'all',
+        itemName: '',
+        minQuantity: '1',
+        maxQuantity: '100',
+        urgency: 'all'
+      });
+
+      const response = await fetch(`/api/public/search?${searchParams}`);
+      if (response.ok) {
+        const data = await response.json();
+
+        // Convert donations to expected format
+        const donationsWithUser: DonationWithUser[] = (data.donations || []).map((donation: any) => ({
+          id: donation.id,
+          donorId: 'hidden', // Hidden for privacy
+          donorName: donation.donorName,
+          itemName: donation.itemName,
+          category: donation.category,
+          description: donation.description,
+          quantity: donation.quantity,
+          photoUrl: donation.photoUrl,
+          status: 'approved' as const,
+          createdAt: donation.createdAt,
+          updatedAt: donation.updatedAt,
+        }));
+
+        // Convert requests to expected format
+        const requestsWithUser: RequestWithUser[] = (data.requests || []).map((request: any) => ({
+          id: request.id,
+          receiverId: 'hidden', // Hidden for privacy
+          receiverName: request.receiverName,
+          itemNeeded: request.itemNeeded,
+          category: request.category,
+          description: request.description,
+          quantity: request.quantity,
+          urgency: request.urgency,
+          status: 'approved' as const,
+          createdAt: request.createdAt,
+          updatedAt: request.updatedAt,
+        }));
+
+        setDonations(donationsWithUser);
+        setRequests(requestsWithUser);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
