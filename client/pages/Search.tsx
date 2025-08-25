@@ -122,51 +122,90 @@ export default function Search() {
     }
   };
 
-  const applyFilters = () => {
-    // Filter donations
-    let filteredDons = donations.filter(donation => {
-      if (filters.category !== 'all' && donation.category !== filters.category) return false;
-      if (filters.itemName && !donation.itemName.toLowerCase().includes(filters.itemName.toLowerCase())) return false;
-      if (donation.quantity < filters.quantity[0] || donation.quantity > filters.quantity[1]) return false;
-      return true;
-    });
+  const applyFilters = async () => {
+    try {
+      setIsLoading(true);
 
-    // Filter requests
-    let filteredReqs = requests.filter(request => {
-      if (filters.category !== 'all' && request.category !== filters.category) return false;
-      if (filters.itemName && !request.itemNeeded.toLowerCase().includes(filters.itemName.toLowerCase())) return false;
-      if (request.quantity < filters.quantity[0] || request.quantity > filters.quantity[1]) return false;
-      if (filters.urgency !== 'all' && request.urgency !== filters.urgency) return false;
-      return true;
-    });
+      // Build search parameters
+      const searchParams = new URLSearchParams({
+        type: searchType,
+        category: filters.category,
+        itemName: filters.itemName,
+        minQuantity: filters.quantity[0].toString(),
+        maxQuantity: filters.quantity[1].toString(),
+        urgency: filters.urgency
+      });
 
-    // Sort results
-    const sortFunction = (a: any, b: any) => {
-      switch (filters.sortBy) {
-        case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'quantity':
-          return b.quantity - a.quantity;
-        case 'urgency':
-          if ('urgency' in a && 'urgency' in b) {
-            if (a.urgency === 'urgent' && b.urgency !== 'urgent') return -1;
-            if (a.urgency !== 'urgent' && b.urgency === 'urgent') return 1;
+      const response = await fetch(`/api/public/search?${searchParams}`);
+      if (response.ok) {
+        const data = await response.json();
+
+        // Convert donations to expected format
+        const donationsWithUser: DonationWithUser[] = (data.donations || []).map((donation: any) => ({
+          id: donation.id,
+          donorId: 'hidden',
+          donorName: donation.donorName,
+          itemName: donation.itemName,
+          category: donation.category,
+          description: donation.description,
+          quantity: donation.quantity,
+          photoUrl: donation.photoUrl,
+          status: 'approved' as const,
+          createdAt: donation.createdAt,
+          updatedAt: donation.updatedAt,
+        }));
+
+        // Convert requests to expected format
+        const requestsWithUser: RequestWithUser[] = (data.requests || []).map((request: any) => ({
+          id: request.id,
+          receiverId: 'hidden',
+          receiverName: request.receiverName,
+          itemNeeded: request.itemNeeded,
+          category: request.category,
+          description: request.description,
+          quantity: request.quantity,
+          urgency: request.urgency,
+          status: 'approved' as const,
+          createdAt: request.createdAt,
+          updatedAt: request.updatedAt,
+        }));
+
+        // Sort results based on sortBy filter
+        const sortFunction = (a: any, b: any) => {
+          switch (filters.sortBy) {
+            case 'newest':
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            case 'quantity':
+              return b.quantity - a.quantity;
+            case 'urgency':
+              if ('urgency' in a && 'urgency' in b) {
+                if (a.urgency === 'urgent' && b.urgency !== 'urgent') return -1;
+                if (a.urgency !== 'urgent' && b.urgency === 'urgent') return 1;
+              }
+              return 0;
+            case 'relevance':
+            default:
+              // Server already handles relevance sorting
+              return 0;
           }
-          return 0;
-        case 'relevance':
-        default:
-          // Simple relevance: exact matches first, then partial matches
-          const aRelevance = getRelevanceScore(a);
-          const bRelevance = getRelevanceScore(b);
-          return bRelevance - aRelevance;
+        };
+
+        if (filters.sortBy !== 'relevance') {
+          donationsWithUser.sort(sortFunction);
+          requestsWithUser.sort(sortFunction);
+        }
+
+        setFilteredDonations(donationsWithUser);
+        setFilteredRequests(requestsWithUser);
       }
-    };
-
-    filteredDons.sort(sortFunction);
-    filteredReqs.sort(sortFunction);
-
-    setFilteredDonations(filteredDons);
-    setFilteredRequests(filteredReqs);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+      // Fallback to existing data if API fails
+      setFilteredDonations(donations);
+      setFilteredRequests(requests);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getRelevanceScore = (item: DonationWithUser | RequestWithUser) => {
