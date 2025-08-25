@@ -14,7 +14,36 @@ interface StoredUser {
   updatedAt: string;
 }
 
-const users: StoredUser[] = [];
+// Initialize with some default users for testing
+const users: StoredUser[] = [
+  {
+    id: 'admin1',
+    name: 'Admin User',
+    email: 'admin@example.com',
+    password: 'admin123',
+    role: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'donor1',
+    name: 'Donor User',
+    email: 'donor@example.com',
+    password: 'donor123',
+    role: 'donor',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'receiver1',
+    name: 'Receiver User',
+    email: 'receiver@example.com',
+    password: 'receiver123',
+    role: 'receiver',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 // Simple JWT-like token generation for demo
 const generateToken = (userId: string, role: UserRole): string => {
