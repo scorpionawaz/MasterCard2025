@@ -7,9 +7,13 @@ import { addDonation, getMyDonations, updateDonation, deleteDonation, getAllDona
 import { addRequest, getMyRequests, updateRequest, deleteRequest, getAllRequests, approveRequest, getPublicRequests } from "./routes/requests";
 import { createMatch, getAllMatches, completeMatch, cancelMatch } from "./routes/matching";
 import { getPublicActivitiesWithSample } from "./routes/activities";
+import { initializeCSVFiles } from "./utils/csvUtils";
 
 export function createServer() {
   const app = express();
+
+  // Initialize CSV files on server startup
+  initializeCSVFiles();
 
   // Middleware
   app.use(cors());
