@@ -1,10 +1,9 @@
 import { RequestHandler } from "express";
 import { CreateMatchRequest, CreateMatchResponse, Match } from "@shared/api";
-import { donations } from "./donations";
-import { requests } from "./requests";
+import { readDonationsFromCSV, readRequestsFromCSV, updateDonationInCSV, updateRequestInCSV } from "../utils/csvUtils";
 import crypto from "crypto";
 
-// Simple in-memory storage for demo purposes
+// Simple in-memory storage for matches (could also be moved to CSV if needed)
 const matches: Match[] = [];
 
 // Create match (POST /api/admin/match) - Admin only
@@ -20,6 +19,10 @@ export const createMatch: RequestHandler = (req: any, res) => {
       };
       return res.status(400).json(response);
     }
+
+    // Read current data from CSV files
+    const donations = readDonationsFromCSV();
+    const requests = readRequestsFromCSV();
 
     // Find donation
     const donation = donations.find(d => d.id === donationId);
@@ -97,11 +100,9 @@ export const createMatch: RequestHandler = (req: any, res) => {
 
     matches.push(newMatch);
 
-    // Update donation and request status to 'matched'
-    donation.status = 'matched';
-    donation.updatedAt = now;
-    request.status = 'matched';
-    request.updatedAt = now;
+    // Update donation and request status to 'matched' in CSV files
+    updateDonationInCSV(donationId, { status: 'matched', updatedAt: now });
+    updateRequestInCSV(requestId, { status: 'matched', updatedAt: now });
 
     const response: CreateMatchResponse = {
       success: true,
@@ -123,6 +124,10 @@ export const createMatch: RequestHandler = (req: any, res) => {
 // Get all matches (GET /api/admin/matches) - Admin only
 export const getAllMatches: RequestHandler = (req: any, res) => {
   try {
+    // Read current data from CSV files
+    const donations = readDonationsFromCSV();
+    const requests = readRequestsFromCSV();
+
     // Enhanced matches with donation and request details
     const enhancedMatches = matches.map(match => {
       const donation = donations.find(d => d.id === match.donationId);
@@ -202,23 +207,15 @@ export const cancelMatch: RequestHandler = (req: any, res) => {
       });
     }
 
-    // Find and reset donation and request status
-    const donation = donations.find(d => d.id === match.donationId);
-    const request = requests.find(r => r.id === match.requestId);
+    const now = new Date().toISOString();
 
-    if (donation) {
-      donation.status = 'approved';
-      donation.updatedAt = new Date().toISOString();
-    }
-
-    if (request) {
-      request.status = 'approved';
-      request.updatedAt = new Date().toISOString();
-    }
+    // Reset donation and request status to 'approved' in CSV files
+    updateDonationInCSV(match.donationId, { status: 'approved', updatedAt: now });
+    updateRequestInCSV(match.requestId, { status: 'approved', updatedAt: now });
 
     // Update match status
     match.status = 'cancelled';
-    match.updatedAt = new Date().toISOString();
+    match.updatedAt = now;
 
     res.json({
       success: true,
